@@ -13,7 +13,7 @@ import (
 	"golang.org/x/net/http2"
 	"golang.org/x/net/proxy"
 
-	utls "github.com/refraction-networking/utls"
+	utls "github.com/vimbing/utls"
 )
 
 var errProtocolNegotiated = errors.New("protocol negotiated")
@@ -21,7 +21,7 @@ var errProtocolNegotiated = errors.New("protocol negotiated")
 type roundTripper struct {
 	sync.Mutex
 
-	clientHelloId     utls.ClientHelloID
+	clientHelloId utls.ClientHelloID
 
 	cachedConnections map[string]net.Conn
 	cachedTransports  map[string]http.RoundTripper
@@ -84,6 +84,7 @@ func (rt *roundTripper) dialTLS(ctx context.Context, network, addr string) (net.
 	}
 
 	conn := utls.UClient(rawConn, &utls.Config{ServerName: host}, rt.clientHelloId)
+
 	if err = conn.Handshake(); err != nil {
 		_ = conn.Close()
 		return nil, err

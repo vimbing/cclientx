@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"testing"
 
-	tls "github.com/refraction-networking/utls"
+	tls "github.com/vimbing/utls"
 )
 
 type JA3Response struct {
