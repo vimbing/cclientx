@@ -13,7 +13,7 @@ import (
 	"golang.org/x/net/http2"
 	"golang.org/x/net/proxy"
 
-	utls "github.com/vimbing/utls"
+	utls "github.com/refraction-networking/utls"
 )
 
 var errProtocolNegotiated = errors.New("protocol negotiated")
@@ -83,7 +83,100 @@ func (rt *roundTripper) dialTLS(ctx context.Context, network, addr string) (net.
 		host = addr
 	}
 
-	conn := utls.UClient(rawConn, &utls.Config{ServerName: host}, rt.clientHelloId)
+	conn := utls.UClient(rawConn, &utls.Config{ServerName: host}, utls.HelloCustom)
+
+	spec := utls.ClientHelloSpec{
+		CipherSuites: []uint16{
+			utls.GREASE_PLACEHOLDER,
+			utls.TLS_AES_128_GCM_SHA256,
+			utls.TLS_AES_256_GCM_SHA384,
+			utls.TLS_CHACHA20_POLY1305_SHA256,
+			utls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+			utls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+			utls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
+			utls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+			utls.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,
+			utls.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,
+			utls.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
+			utls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+			utls.TLS_RSA_WITH_AES_128_GCM_SHA256,
+			utls.TLS_RSA_WITH_AES_256_GCM_SHA384,
+			utls.TLS_RSA_WITH_AES_128_CBC_SHA,
+			utls.TLS_RSA_WITH_AES_256_CBC_SHA,
+		},
+		CompressionMethods: []byte{
+			0x00,
+		},
+		Extensions: []utls.TLSExtension{
+			&utls.UtlsGREASEExtension{},
+			&utls.SNIExtension{},
+			&utls.UtlsExtendedMasterSecretExtension{},
+			&utls.RenegotiationInfoExtension{},
+			&utls.SupportedCurvesExtension{[]utls.CurveID{
+				utls.CurveID(utls.GREASE_PLACEHOLDER),
+				utls.CurveID(0x1D),
+				utls.CurveID(0x17),
+				utls.CurveID(0x18),
+			},
+			},
+			&utls.SupportedPointsExtension{[]uint8{
+				0,
+			}},
+			&utls.SessionTicketExtension{},
+			&utls.ALPNExtension{[]string{
+				"h2",
+				"http/1.1",
+			}},
+			&utls.StatusRequestExtension{},
+			&utls.SignatureAlgorithmsExtension{
+				SupportedSignatureAlgorithms: []utls.SignatureScheme{
+					utls.ECDSAWithP256AndSHA256,
+					utls.PSSWithSHA256,
+					utls.PKCS1WithSHA256,
+					utls.ECDSAWithP384AndSHA384,
+					utls.PSSWithSHA384,
+					utls.PKCS1WithSHA384,
+					utls.PSSWithSHA512,
+					utls.PKCS1WithSHA512,
+				},
+			},
+			&utls.SCTExtension{},
+			&utls.KeyShareExtension{KeyShares: []utls.KeyShare{
+				{Group: utls.CurveID(utls.GREASE_PLACEHOLDER), Data: []byte{0}},
+				{Group: utls.X25519},
+			}},
+			&utls.PSKKeyExchangeModesExtension{
+				Modes: []uint8{
+					utls.PskModeDHE,
+					utls.PskModeDHE,
+				},
+			},
+			&utls.SupportedVersionsExtension{
+				Versions: []uint16{
+					utls.GREASE_PLACEHOLDER,
+					utls.VersionTLS13,
+					utls.VersionTLS12,
+					utls.VersionTLS11,
+					utls.VersionTLS10,
+				},
+			},
+			&utls.FakeCertCompressionAlgsExtension{
+				Methods: []utls.CertCompressionAlgo{
+					utls.CertCompressionBrotli,
+				},
+			},
+			&utls.GenericExtension{Id: 0x4469},
+			&utls.UtlsGREASEExtension{},
+			&utls.UtlsPaddingExtension{},
+		},
+	}
+
+	err = conn.ApplyPreset(&spec)
+
+	if err != nil {
+		_ = conn.Close()
+		return nil, err
+	}
 
 	if err = conn.Handshake(); err != nil {
 		_ = conn.Close()

@@ -5,7 +5,7 @@ import (
 
 	"golang.org/x/net/proxy"
 
-	utls "github.com/vimbing/utls"
+	utls "github.com/refraction-networking/utls"
 )
 
 func NewClient(clientHello utls.ClientHelloID, proxyUrl ...string) (http.Client, error) {
