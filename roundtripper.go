@@ -6,11 +6,12 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"net/http"
 	"strings"
 	"sync"
 
-	"golang.org/x/net/http2"
+	http "github.com/useflyent/fhttp"
+
+	"github.com/useflyent/fhttp/http2"
 	"golang.org/x/net/proxy"
 
 	utls "github.com/refraction-networking/utls"
