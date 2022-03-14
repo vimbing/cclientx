@@ -2,19 +2,18 @@ package cclient
 
 import (
 	"context"
-	"crypto/tls"
 	"errors"
 	"fmt"
 	"net"
 	"strings"
 	"sync"
 
-	http "github.com/useflyent/fhttp"
+	http "github.com/Carcraftz/fhttp"
 
-	"github.com/useflyent/fhttp/http2"
+	"github.com/Carcraftz/fhttp/http2"
 	"golang.org/x/net/proxy"
 
-	utls "github.com/refraction-networking/utls"
+	utls "github.com/Carcraftz/utls"
 )
 
 var errProtocolNegotiated = errors.New("protocol negotiated")
@@ -84,7 +83,7 @@ func (rt *roundTripper) dialTLS(ctx context.Context, network, addr string) (net.
 		host = addr
 	}
 
-	conn := utls.UClient(rawConn, &utls.Config{ServerName: host}, utls.HelloCustom)
+	conn := utls.UClient(rawConn, &utls.Config{ServerName: host}, rt.clientHelloId)
 
 	spec := utls.ClientHelloSpec{
 		CipherSuites: []uint16{
@@ -161,8 +160,8 @@ func (rt *roundTripper) dialTLS(ctx context.Context, network, addr string) (net.
 					utls.VersionTLS10,
 				},
 			},
-			&utls.FakeCertCompressionAlgsExtension{
-				Methods: []utls.CertCompressionAlgo{
+			&utls.CompressCertificateExtension{
+				Algorithms: []utls.CertCompressionAlgo{
 					utls.CertCompressionBrotli,
 				},
 			},
@@ -192,8 +191,16 @@ func (rt *roundTripper) dialTLS(ctx context.Context, network, addr string) (net.
 	// of ALPN.
 	switch conn.ConnectionState().NegotiatedProtocol {
 	case http2.NextProtoTLS:
-		// The remote peer is speaking HTTP 2 + TLS.
-		rt.cachedTransports[addr] = &http2.Transport{DialTLS: rt.dialTLSHTTP2}
+		t2 := http2.Transport{DialTLS: rt.dialTLSHTTP2}
+		t2.Settings = []http2.Setting{
+			{ID: http2.SettingMaxConcurrentStreams, Val: 1000},
+			{ID: http2.SettingMaxFrameSize, Val: 16384},
+			{ID: http2.SettingMaxHeaderListSize, Val: 262144},
+		}
+		t2.InitialWindowSize = 6291456
+		t2.HeaderTableSize = 65536
+		t2.PushHandler = &http2.DefaultPushHandler{}
+		rt.cachedTransports[addr] = &t2
 	default:
 		// Assume the remote peer is speaking HTTP 1.x + TLS.
 		rt.cachedTransports[addr] = &http.Transport{DialTLSContext: rt.dialTLS}
@@ -206,7 +213,7 @@ func (rt *roundTripper) dialTLS(ctx context.Context, network, addr string) (net.
 	return nil, errProtocolNegotiated
 }
 
-func (rt *roundTripper) dialTLSHTTP2(network, addr string, _ *tls.Config) (net.Conn, error) {
+func (rt *roundTripper) dialTLSHTTP2(network, addr string, _ *utls.Config) (net.Conn, error) {
 	return rt.dialTLS(context.Background(), network, addr)
 }
 
