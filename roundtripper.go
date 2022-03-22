@@ -166,8 +166,7 @@ func (rt *roundTripper) dialTLS(ctx context.Context, network, addr string) (net.
 				},
 			},
 			&utls.GenericExtension{
-				Id:   0x4469,
-				Data: []byte{00, 03, 02, 68, 32},
+				Id: 0x4469,
 			},
 			&utls.UtlsGREASEExtension{},
 			&utls.UtlsPaddingExtension{
