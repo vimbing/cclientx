@@ -87,22 +87,22 @@ func (rt *roundTripper) dialTLS(ctx context.Context, network, addr string) (net.
 
 	spec := utls.ClientHelloSpec{
 		CipherSuites: []uint16{
-			utls.GREASE_PLACEHOLDER,
-			utls.TLS_AES_128_GCM_SHA256,
-			utls.TLS_AES_256_GCM_SHA384,
-			utls.TLS_CHACHA20_POLY1305_SHA256,
-			utls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
-			utls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
-			utls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
-			utls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-			utls.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,
-			utls.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,
-			utls.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
-			utls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
-			utls.TLS_RSA_WITH_AES_128_GCM_SHA256,
-			utls.TLS_RSA_WITH_AES_256_GCM_SHA384,
-			utls.TLS_RSA_WITH_AES_128_CBC_SHA,
-			utls.TLS_RSA_WITH_AES_256_CBC_SHA,
+			utls.GREASE_PLACEHOLDER,                                // 1
+			utls.TLS_AES_128_GCM_SHA256,                            // 2
+			utls.TLS_AES_256_GCM_SHA384,                            // 3
+			utls.TLS_CHACHA20_POLY1305_SHA256,                      // 4
+			utls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,           // 5
+			utls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,             // 6
+			utls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,           // 7
+			utls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,             // 8
+			utls.OLD_TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256, // 9
+			utls.OLD_TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,   // 10
+			utls.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,                // 11
+			utls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,                // 12
+			utls.TLS_RSA_WITH_AES_128_GCM_SHA256,                   // 13
+			utls.TLS_RSA_WITH_AES_256_GCM_SHA384,                   // 14
+			utls.TLS_RSA_WITH_AES_128_CBC_SHA,                      // 15
+			utls.TLS_RSA_WITH_AES_256_CBC_SHA,                      // 16
 		},
 		CompressionMethods: []byte{
 			0x00,
@@ -113,7 +113,7 @@ func (rt *roundTripper) dialTLS(ctx context.Context, network, addr string) (net.
 			&utls.UtlsExtendedMasterSecretExtension{},
 			&utls.RenegotiationInfoExtension{},
 			&utls.SupportedCurvesExtension{[]utls.CurveID{
-				utls.CurveID(utls.GREASE_PLACEHOLDER),
+				utls.CurveID(0x7A7A),
 				utls.CurveID(0x1D),
 				utls.CurveID(0x17),
 				utls.CurveID(0x18),
